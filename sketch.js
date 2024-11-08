@@ -12,12 +12,20 @@ let world;
 let quadTree;
 let numParticlesA = 40;
 let numParticlesB = 40;
-let initialRadius = 10;
+let initialRadius = 30;
 let minRadius = 5;
+let maxRadius = 60;
+let growthRate = 0.01; // Lower = slower, Higher = faster
+let oscillationRange = maxRadius - minRadius;
+let midRadius = (maxRadius + minRadius) / 2;
+let originalRadii = []; // Store original radii
 let initialRadiusDeviation = 2;
 let timer = 5000;
 let nextChange = timer;
 let alternator = -1;
+
+
+
 
 function drawQuadTree(quadTree) {
     stroke('#333333');
@@ -42,6 +50,7 @@ function setup() {
         let y = random(height);
         let p = new c2.Particle(x, y);
         p.radius = random(initialRadius - initialRadiusDeviation, initialRadius + initialRadiusDeviation);
+        originalRadii.push(p.radius); // Store the original radius
         p.color = color(random(0, 8), random(30, 60), random(20, 100));
 
         world.addParticle(p);
@@ -68,12 +77,15 @@ function draw() {
     } 
 
     for (let i = 0; i < numParticlesA; i++) {
-      if (world.particles[i].radius < minRadius && alternator < 0) continue; 
-      world.particles[i].radius += (alternator * 0.1);
+        // Group A: When alternator is 1, grow towards max
+        let targetRadius = alternator > 0 ? maxRadius : minRadius;
+        world.particles[i].radius += (targetRadius - world.particles[i].radius) * growthRate;
     }
-    for (let i = numParticlesA - 1; i < numParticlesA + numParticlesB; i++) {
-      if (world.particles[i].radius < minRadius && alternator > 0) continue; 
-      world.particles[i].radius -= (alternator * 0.1);
+    
+    for (let i = numParticlesA; i < numParticlesA + numParticlesB; i++) {
+        // Group B: When alternator is 1, shrink towards min
+        let targetRadius = alternator > 0 ? minRadius : maxRadius;
+        world.particles[i].radius += (targetRadius - world.particles[i].radius) * growthRate;
     }
 
     world.update();
